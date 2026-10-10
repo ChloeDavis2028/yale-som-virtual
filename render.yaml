@@ -1,0 +1,12 @@
+# Render Blueprint: deploys this app as a free static site.
+# In Render: New + -> Blueprint -> pick this repo. Every push to main redeploys.
+services:
+  - type: web
+    runtime: static
+    name: yale-som-virtual
+    branch: main
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
