@@ -72,6 +72,8 @@ export default function TouchControls({ touchRef, onPause }) {
           touchRef.current.jump = true
         }}
       >
+        🦘
+        <br />
         jump
       </button>
       <button
@@ -81,9 +83,9 @@ export default function TouchControls({ touchRef, onPause }) {
           onPause()
         }}
       >
-        pause
+        ⏸️ stop
       </button>
-      <div className="touchhint">left thumb walk · drag to look</div>
+      <div className="touchhint">👍 left thumb to walk · 👆 drag to look around</div>
     </div>
   )
 }

@@ -105,7 +105,7 @@ export default function Player({ lockRef, mapRef, touchRef, onLock, onWhere }) {
         mz /= l
       }
       const crouching = active && k.KeyC
-      const speed = crouching ? 2.4 : sprint ? 9.5 : 5.5 // m/s; brisk walk, sprint is a jog
+      const speed = crouching ? 2 : sprint ? 6 : 3.5 // m/s; gentle kid-friendly walk, sprint is a light jog
       const pos = { x: camera.position.x + mx * speed * dt, z: camera.position.z + mz * speed * dt }
       collide(pos)
       // risers: walk up one step at a time; anything taller acts like a wall

@@ -48,7 +48,7 @@ export default function App() {
         <Minimap drawRef={mapRef} />
       </div>
       <button className="maptoggle" onClick={() => setShowMap((s) => !s)}>
-        {showMap ? 'hide map' : 'map'}
+        {showMap ? '🗺️ hide map' : '🗺️ map'}
       </button>
       {playing && <div className="crosshair" />}
       {touchOn && <TouchControls touchRef={touchRef} onPause={() => setTouch(false)} />}
@@ -56,10 +56,16 @@ export default function App() {
       {!playing && (
         <div className="overlay" onClick={() => (isTouch ? setTouch(true) : lockRef.current?.())}>
           <div className="card">
-            <div className="kicker">Yale SOM · Evans Hall</div>
-            <h1>Floor 2</h1>
-            <p className="sub">Classroom drums, the cloister, Ross Library, the Beinecke Terrace Room, and the courtyard.</p>
-            <button className="go">{isTouch ? 'Tap to walk in' : 'Click to walk in'}</button>
+            <div className="kicker">🏫 Welcome, explorer!</div>
+            <h1>Let's Explore!</h1>
+            <p className="sub">Walk around a real school building at Yale. Peek into the round classrooms and say hi to the friends in the courtyard!</p>
+            <div className="mission">
+              <span className="mission-icon">🐶</span>
+              <span>
+                <b>Your mission:</b> find <b>Handsome Dan</b>, the Yale bulldog! He's the <b className="bluedot">blue dot</b> on the map.
+              </span>
+            </div>
+            <button className="go">🚀 {isTouch ? "Tap to start!" : "Let's go!"}</button>
             {!isTouch && (
               <button
                 className="go alt"
@@ -68,23 +74,22 @@ export default function App() {
                   setTouch(true)
                 }}
               >
-                Use on-screen joystick
+                🕹️ Use a joystick instead
               </button>
             )}
             {isTouch ? (
               <div className="keys">
-                <span><b>Left thumb</b> joystick to walk (push all the way to hurry)</span>
-                <span><b>Right thumb</b> drag to look</span>
+                <span>👍 <b>Left thumb</b> walk</span>
+                <span>👆 <b>Drag</b> look around</span>
+                <span>🦘 <b>Jump</b> button</span>
               </div>
             ) : (
               <div className="keys">
-                <span><b>W A S D</b> walk</span>
-                <span><b>Mouse</b> look</span>
-                <span><b>Shift</b> sprint</span>
-                <span><b>Space</b> jump</span>
-                <span><b>C</b> crouch</span>
-                <span><b>M</b> map</span>
-                <span><b>Esc</b> pause</span>
+                <span>⬆️⬇️⬅️➡️ <b>Arrows</b> walk</span>
+                <span>🖱️ <b>Mouse</b> look around</span>
+                <span>🦘 <b>Space</b> jump</span>
+                <span>🗺️ <b>M</b> map</span>
+                <span>⏸️ <b>Esc</b> stop</span>
               </div>
             )}
           </div>

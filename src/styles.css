@@ -99,66 +99,107 @@ body,
   z-index: 10;
 }
 
+/* kid-friendly welcome card: big, round, bright */
 .card {
-  max-width: 440px;
+  max-width: 480px;
   margin: 16px;
-  padding: 32px;
-  background: var(--black);
-  border: 2px solid var(--pink);
-  border-radius: 18px;
+  padding: 30px 30px 26px;
+  background: linear-gradient(160deg, #1b2a6b 0%, #00356b 55%, #3b1d5e 100%);
+  border: 4px solid #ffd23f;
+  border-radius: 28px;
   color: #fff;
-  box-shadow: 0 0 40px rgba(255, 79, 163, 0.4);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45), 0 0 0 6px rgba(255, 210, 63, 0.25);
+  font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
 }
 
 .kicker {
-  color: var(--pink);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 12px;
+  color: #ffd23f;
+  font-weight: 700;
+  font-size: 18px;
 }
 
 .card h1 {
-  margin: 6px 0 8px;
-  font-size: 48px;
-  font-family: Georgia, serif;
+  margin: 4px 0 8px;
+  font-size: 52px;
+  line-height: 1.05;
+  font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+  text-shadow: 3px 3px 0 var(--pink);
 }
 
 .sub {
-  color: #d9d9de;
+  color: #e8ecff;
+  font-size: 17px;
   line-height: 1.45;
-  margin: 0 0 20px;
+  margin: 0 0 14px;
+}
+
+.mission {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px dashed #ffd23f;
+  border-radius: 16px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.mission-icon {
+  font-size: 40px;
+}
+
+.bluedot {
+  color: #6fb6ff;
 }
 
 .go {
   width: 100%;
-  padding: 14px;
+  padding: 18px;
   border: 0;
-  border-radius: 12px;
-  background: var(--pink);
-  color: var(--black);
-  font-weight: 700;
-  font-size: 16px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff4fa3, #ff8a3d);
+  color: #fff;
+  font-weight: 800;
+  font-size: 24px;
   cursor: pointer;
+  box-shadow: 0 6px 0 #b8326f;
+  transition: transform 0.1s;
+}
+
+.go:hover {
+  transform: scale(1.03);
 }
 
 .go.alt {
-  margin-top: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  font-size: 17px;
   background: transparent;
-  color: var(--pink);
-  border: 1px solid var(--pink);
+  color: #ffd23f;
+  border: 2px solid #ffd23f;
+  box-shadow: none;
 }
 
 .keys {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
+  gap: 8px;
   margin-top: 18px;
-  color: #bdbdc4;
-  font-size: 13px;
+  color: #fff;
+  font-size: 15px;
+}
+
+.keys span {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
 }
 
 .keys b {
-  color: var(--pink-soft);
+  color: #ffd23f;
 }
 
 /* ---------- phone controls */
@@ -175,8 +216,8 @@ body,
   position: absolute;
   left: 24px;
   bottom: 32px;
-  width: 130px;
-  height: 130px;
+  width: 170px;
+  height: 170px;
   border-radius: 50%;
   border: 2px solid var(--pink);
   background: rgba(11, 11, 13, 0.45);
@@ -186,8 +227,8 @@ body,
 }
 
 .knob {
-  width: 56px;
-  height: 56px;
+  width: 74px;
+  height: 74px;
   border-radius: 50%;
   background: var(--pink);
   box-shadow: 0 0 18px rgba(255, 79, 163, 0.7);
@@ -201,23 +242,24 @@ body,
   color: var(--pink);
   border: 1px solid var(--pink);
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 18px;
   touch-action: none;
 }
 
 .jump {
   right: 24px;
   bottom: 40px;
-  width: 76px;
-  height: 76px;
+  width: 104px;
+  height: 104px;
   font-weight: 700;
+  line-height: 1.1;
 }
 
 .pause {
   left: 50%;
   top: 16px;
   transform: translateX(-50%);
-  padding: 6px 16px;
+  padding: 10px 22px;
 }
 
 .touchhint {
@@ -246,6 +288,13 @@ body,
     font-size: 12px;
   }
   .card h1 {
-    font-size: 38px;
+    font-size: 40px;
+  }
+  .card {
+    padding: 22px 20px 20px;
+  }
+  .go {
+    font-size: 21px;
+    padding: 15px;
   }
 }

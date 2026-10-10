@@ -64,6 +64,69 @@ const DECKS = {
   },
 }
 
+// Kid-friendly lessons for the same eight classrooms. Set KIDS = false to show the MBA slides again.
+export const KIDS = true
+const KID_DECKS = {
+  mgt409: {
+    cls: 'Robots & Computers',
+    title: ['How Computers Think', 'They follow instructions, step by step!'],
+    content: ['Robot rules', ['Computers do exactly what we tell them', 'You can talk to some computers!', 'Always ask a grown-up first', 'Be kind online, just like in person']],
+    fun: ['🤖', 'Robots love clear instructions!'],
+  },
+  mgt404: {
+    cls: 'Money & Sharing',
+    title: ['Saving Your Coins', 'A little each week adds up!'],
+    content: ['Smart with money', ['Save some, spend some, share some', 'Wants vs. needs: what do you need?', 'A lemonade stand is a tiny business', 'Counting coins is a superpower']],
+    fun: ['🍋', 'How much would you charge for lemonade?'],
+  },
+  mgt403: {
+    cls: 'Guessing Games',
+    title: ['Lucky Dice!', 'What number will you roll?'],
+    content: ['Fun with chance', ['A coin has two sides: heads or tails', 'A die has six sides', 'Some things are likely, some are not', 'Will it rain tomorrow? Make a guess!']],
+    fun: ['🎲', 'Rolling a 6 happens 1 time in 6!'],
+  },
+  mgt887: {
+    cls: 'Playing Fair',
+    title: ["Let's Make a Deal", 'Everyone can win when we share'],
+    content: ['Being a good teammate', ['Take turns and listen', 'Trade toys so both people are happy', 'Say please and thank you', 'Working together beats fighting']],
+    fun: ['🤝', 'Sharing makes friends!'],
+  },
+  mgt402: {
+    cls: 'Counting & Numbers',
+    title: ['Number Magic', 'Adding things up, one by one'],
+    content: ['Count with me', ['2 apples + 3 apples = 5 apples', 'Take 1 away: 4 apples left', 'Keep a list so you never forget', 'Always double-check your answer!']],
+    fun: ['🍎', 'How many apples can you count?'],
+  },
+  mgt538: {
+    cls: 'Brave Speaking',
+    title: ['Speak Up, Shine Bright!', 'Your ideas matter'],
+    content: ['How to share an idea', ['Look at the person you are talking to', 'Speak loud and clear', 'Smile and be yourself', 'Listen when others talk too']],
+    fun: ['🎤', 'Practice in the mirror!'],
+  },
+  mgt800: {
+    cls: 'Safety First',
+    title: ['Constant Vigilance!', 'Staying safe, every day'],
+    content: ['Safety rules', ["Know a grown-up's phone number", 'Look both ways before crossing', 'Never share passwords online', 'If something feels wrong, tell a grown-up']],
+    fun: ['⛑️', 'Being safe is a superpower!'],
+  },
+  mgt541: {
+    cls: 'Growing Plants',
+    title: ['Watch It Grow!', 'Small seeds become big trees'],
+    content: ['How plants grow', ['Plant a seed in soil', 'Give it water and sunshine', 'Be patient: growing takes time', 'Saving money grows the same way!']],
+    fun: ['🌱', 'Tiny seeds, big trees!'],
+  },
+}
+
+function drawFun(g, [emoji, caption]) {
+  g.textAlign = 'center'
+  g.font = '230px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'
+  g.fillText(emoji, W / 2, 430)
+  g.fillStyle = INK
+  g.font = 'bold 50px Georgia, serif'
+  g.fillText(caption, W / 2, 560)
+  g.textAlign = 'left'
+}
+
 function frame(g, course, title) {
   g.fillStyle = '#ffffff'
   g.fillRect(0, 0, W, Hh)
@@ -76,7 +139,7 @@ function frame(g, course, title) {
   g.fillRect(0, Hh - 56, W, 56)
   g.fillStyle = '#5a6475'
   g.font = '24px Georgia, serif'
-  g.fillText(`Yale SOM · ${COURSES[course].code}`, 56, Hh - 20)
+  g.fillText(KIDS ? `Yale Explorers · ${KID_DECKS[course].cls}` : `Yale SOM · ${COURSES[course].code}`, 56, Hh - 20)
   g.fillStyle = PINK
   g.fillRect(W - 140, Hh - 40, 84, 24)
 }
@@ -236,14 +299,14 @@ export function slideTex(course, kind) {
   c.width = W
   c.height = Hh
   const g = c.getContext('2d')
-  const deck = DECKS[course]
+  const deck = KIDS ? KID_DECKS[course] : DECKS[course]
   if (kind === 'title') {
     const info = COURSES[course]
     g.fillStyle = BLUE
     g.fillRect(0, 0, W, Hh)
     g.fillStyle = PINK
     g.font = 'bold 34px Georgia, serif'
-    g.fillText(`${info.code} · ${info.name}`, 80, 150)
+    g.fillText(KIDS ? deck.cls : `${info.code} · ${info.name}`, 80, 150)
     g.fillRect(80, 330, 140, 10)
     g.fillStyle = '#ffffff'
     g.font = 'bold 76px Georgia, serif'
@@ -252,7 +315,7 @@ export function slideTex(course, kind) {
     g.fillText(deck.title[1], 80, 410)
     g.font = 'italic 34px Georgia, serif'
     g.fillStyle = '#c9d6ea'
-    g.fillText(`Prof. ${info.prof} · Yale SOM · Fall 2026`, 80, 620)
+    g.fillText(KIDS ? `Taught by Prof. ${info.prof}` : `Prof. ${info.prof} · Yale SOM · Fall 2026`, 80, 620)
   } else if (kind === 'content') {
     frame(g, course, deck.content[0])
     g.fillStyle = INK
@@ -265,7 +328,8 @@ export function slideTex(course, kind) {
     })
   } else {
     frame(g, course, deck.title[0])
-    drawChart(g, deck.chart)
+    if (KIDS) drawFun(g, deck.fun)
+    else drawChart(g, deck.chart)
   }
   const t = new THREE.CanvasTexture(c)
   t.colorSpace = THREE.SRGBColorSpace
