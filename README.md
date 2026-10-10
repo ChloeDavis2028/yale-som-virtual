@@ -64,6 +64,8 @@ Conversations are kept on the server per `(person, session)`: at most 200 sessio
 
 Dev helper: `document.body.dataset.talk = "zaman"` in the console opens the chat without pointer lock.
 
+**Live on Render:** `render.yaml` deploys both the game (static site) and this backend (`yale-som-virtual-api`, a free Python web service). In Render: **New + → Blueprint →** pick this repo, paste your `PORTKEY_API_KEY` when asked, and click **Apply**. The GitHub Pages build and the Render static site both point their chat at `https://yale-som-virtual-api.onrender.com`. Free services sleep after ~15 minutes idle, so the first chat after a while can take up to a minute.
+
 ## How it's built
 
 - `src/layout.js`: the floor plan in meters (+x east, -z north). It holds the drums, library, Beinecke, stairs, meeting rooms, wall colliders, and room lookup. Each classroom faces the courtyard, with the whiteboard and podium on the inner side and stadium-seating rows (32 cm risers) stepping up toward the outer wall; its two doors are at the front corners. You climb the center-aisle steps one riser at a time.

@@ -1,6 +1,6 @@
-# Render Blueprint: deploys this app as a free static site.
-# In Render: New + -> Blueprint -> pick this repo. Every push to main redeploys.
+# Render Blueprint: in Render, New + -> Blueprint -> pick this repo. Every push to main redeploys.
 services:
+  # The 3D game (free static site)
   - type: web
     runtime: static
     name: yale-som-virtual
@@ -10,3 +10,22 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: VITE_API_URL # where the chat finds the backend below
+        value: https://yale-som-virtual-api.onrender.com
+
+  # The AI avatar backend (FastAPI + PydanticAI)
+  - type: web
+    runtime: python
+    name: yale-som-virtual-api
+    plan: free
+    branch: main
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13"
+      - key: OPENAI_MODEL
+        value: gpt-6-luna
+      - key: PORTKEY_API_KEY # secret: Render asks for it when you apply the Blueprint
+        sync: false

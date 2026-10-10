@@ -7,6 +7,7 @@ Routes: GET /api/health, GET /api/people, POST /api/people/{person_id}/chat
 
 from __future__ import annotations
 
+import os
 import uuid
 from collections import OrderedDict
 
@@ -20,10 +21,19 @@ from people import MODEL_NAME, PEOPLE, agent_for
 MAX_SESSIONS = 200
 MAX_MESSAGES = 40
 
+# local dev + the two live front ends; add more with ALLOWED_ORIGINS="https://a.com,https://b.com"
+ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://chloedavis2028.github.io",
+    "https://yale-som-virtual.onrender.com",
+    *[o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()],
+]
+
 app = FastAPI(title="Yale SOM Virtual: AI avatars")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
