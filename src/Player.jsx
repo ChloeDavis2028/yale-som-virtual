@@ -3,15 +3,28 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js'
 import { EYE, MAX_STEP, SPAWN, collide, floorAt, locate } from './layout.js'
+import { TALKABLES } from './talk.js'
 
 const CROUCH_EYE = 1.05
 const JUMP_SPEED = 4.2
 const GRAVITY = 12
 const LOOK_SPEED = 0.005 // radians per touch pixel
+const TALK_RANGE = 8 // meters
+const CENTER = new THREE.Vector2(0, 0)
+
+// keys typed into the chat box must not move the player or toggle the map
+export const typingIn = (e) => e.target instanceof HTMLElement && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)
+
+// walk up from a hit mesh to the root that carries a talkId
+const talkIdOf = (obj) => {
+  for (let o = obj; o; o = o.parent) if (o.userData?.talkId) return o.userData.talkId
+  return null
+}
 
 // PC controls work like a shooter: WASD move, mouse look, Shift sprint, Space jump, C crouch.
 // Touch controls come in through touchRef: { active, move: [x, y], look: [dx, dy], jump }.
-export default function Player({ lockRef, mapRef, touchRef, onLock, onWhere }) {
+// Aim the crosshair at an AI avatar (within 8 m) and click to talk: onHover(id) / onTalk(id).
+export default function Player({ lockRef, mapRef, touchRef, onLock, onWhere, onHover, onTalk }) {
   const { camera, gl } = useThree()
   const controls = useMemo(() => new PointerLockControls(camera, gl.domElement), [camera, gl])
   const keys = useRef({})
@@ -23,11 +36,19 @@ export default function Player({ lockRef, mapRef, touchRef, onLock, onWhere }) {
   const vy = useRef(0)
   const fwd = useMemo(() => new THREE.Vector3(), [])
   const euler = useMemo(() => new THREE.Euler(0, 0, 0, 'YXZ'), [])
+  const ray = useMemo(() => {
+    const r = new THREE.Raycaster()
+    r.far = TALK_RANGE
+    return r
+  }, [])
+  const hover = useRef(null)
+  const frame = useRef(0)
 
   useEffect(() => {
     camera.position.set(SPAWN.x, EYE, SPAWN.z)
     camera.rotation.set(0, 0, 0)
     lockRef.current = () => controls.lock()
+    lockRef.unlock = () => controls.unlock() // the app frees the mouse when a chat opens
     const on = () => onLock(true)
     const off = () => {
       keys.current = {} // keys held during Esc never get a keyup
@@ -36,14 +57,19 @@ export default function Player({ lockRef, mapRef, touchRef, onLock, onWhere }) {
     controls.addEventListener('lock', on)
     controls.addEventListener('unlock', off)
     const down = (e) => {
+      if (typingIn(e)) return
       keys.current[e.code] = true
       if (e.code === 'Space') e.preventDefault()
     }
     const up = (e) => (keys.current[e.code] = false)
     const blur = () => (keys.current = {})
+    const click = (e) => {
+      if (e.button === 0 && controls.isLocked && hover.current) onTalk?.(hover.current)
+    }
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
     window.addEventListener('blur', blur)
+    window.addEventListener('mousedown', click)
     return () => {
       controls.removeEventListener('lock', on)
       controls.removeEventListener('unlock', off)
@@ -51,8 +77,9 @@ export default function Player({ lockRef, mapRef, touchRef, onLock, onWhere }) {
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
       window.removeEventListener('blur', blur)
+      window.removeEventListener('mousedown', click)
     }
-  }, [camera, controls, lockRef, onLock])
+  }, [camera, controls, lockRef, onLock, onTalk])
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05)
@@ -134,6 +161,20 @@ export default function Player({ lockRef, mapRef, touchRef, onLock, onWhere }) {
     camera.position.y = devY.current ?? floorY.current + eye.current + jumpY.current
 
     if (import.meta.env.DEV) document.body.dataset.pos = `${camera.position.x.toFixed(2)},${camera.position.z.toFixed(2)},${fwd.x.toFixed(2)},${fwd.z.toFixed(2)}|${touch.move.map((v) => v.toFixed(2))}`
+    // who is under the crosshair? (checked every ~6 frames; only reports changes)
+    if (++frame.current % 6 === 0) {
+      let id = null
+      if (controls.isLocked && TALKABLES.size) {
+        ray.setFromCamera(CENTER, camera)
+        const hit = ray.intersectObjects([...TALKABLES], true)[0]
+        id = hit ? talkIdOf(hit.object) : null
+      }
+      if (id !== hover.current) {
+        hover.current = id
+        onHover?.(id)
+      }
+    }
+
     mapRef.current?.(camera.position.x, camera.position.z, fwd.x, fwd.z)
     const w = locate(camera.position.x, camera.position.z)
     if (w !== where.current) {

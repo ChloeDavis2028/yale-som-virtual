@@ -1,6 +1,7 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { TALKABLES, TALKING } from './talk.js'
 
 // Cartoon wizard professors built from primitives. Each preset sets robe, hair, beard, hat,
 // glasses, size, and a prop; the shared body handles the robe, head, arms and wand.
@@ -31,6 +32,29 @@ export const PROFESSORS = {
   moody: { name: 'Alastor Moody', robe: '#3a3a30', trim: '#5a5240', skin: '#d9b39a', hair: '#8f8a80', height: 1.85 },
   flitwick: { name: 'Filius Flitwick', robe: '#22304f', trim: '#3d5a8a', skin: '#f0cfb4', hair: '#f2f2f2', height: 1.05 },
   hagrid: { name: 'Rubeus Hagrid', robe: '#5b4330', trim: '#3b2c1f', skin: '#e2b28f', hair: '#2e2219', height: 2.7 },
+  // AI avatar (classroom 2200), dressed as Princess Leia in a pink royal wedding gown
+  zaman: { name: 'Tauhid Zaman', robe: '#ff8fc7', trim: '#ffe08a', skin: '#c99a74', hair: '#3b2416', height: 1.8, gown: true },
+}
+
+// pink "AI" patch so nobody mistakes an avatar for the real person
+let badge = null
+function aiBadge() {
+  if (badge) return badge
+  const c = document.createElement('canvas')
+  c.width = c.height = 128
+  const g = c.getContext('2d')
+  g.fillStyle = '#ff4fa3'
+  g.beginPath()
+  g.arc(64, 64, 60, 0, Math.PI * 2)
+  g.fill()
+  g.fillStyle = '#ffffff'
+  g.font = 'bold 64px system-ui, sans-serif'
+  g.textAlign = 'center'
+  g.fillText('AI', 64, 86)
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  badge = new THREE.MeshBasicMaterial({ map: t, transparent: true })
+  return badge
 }
 
 function Face({ who, P }) {
@@ -195,6 +219,24 @@ function Extras({ who, P }) {
           <B c="#e8b0b0" p={[0, 1.7, 0.13]} s={[0.03, 0.025, 0.02]} />
         </>
       )
+    case 'zaman':
+      // Princess Leia: side buns, a gold tiara, a sheer pink veil, and a pink "AI" badge on the bodice
+      return (
+        <>
+          <B c={P.hair} p={[0, 1.76, -0.02]} s={[0.135, 0.12, 0.135]} />
+          <B c={P.hair} p={[0, 1.7, -0.07]} s={[0.13, 0.13, 0.08]} />
+          {[-1, 1].map((sx) => (
+            <group key={sx}>
+              <B g={CYL} c={P.hair} p={[0.15 * sx, 1.7, -0.01]} r={[0, 0, Math.PI / 2]} s={[0.085, 0.07, 0.085]} />
+              <B g={TORUS} c="#2a170d" p={[0.188 * sx, 1.7, -0.01]} r={[0, Math.PI / 2, 0]} s={[0.055, 0.055, 0.055]} />
+            </group>
+          ))}
+          <B g={TORUS} c={P.trim} o={{ metalness: 0.8, roughness: 0.25 }} p={[0, 1.81, 0.01]} r={[Math.PI / 2 - 0.3, 0, 0]} s={[0.12, 0.12, 0.05]} />
+          <B c="#ff4fa3" o={{ emissive: '#ff4fa3', emissiveIntensity: 0.6, metalness: 0.4 }} p={[0, 1.86, 0.1]} s={[0.02, 0.026, 0.012]} />
+          <B g={CONE} c="#ffd6ea" o={{ transparent: true, opacity: 0.45 }} p={[0, 1.22, -0.17]} r={[-0.12, 0, 0]} s={[0.3, 1.25, 0.12]} />
+          <mesh geometry={new THREE.PlaneGeometry(0.11, 0.11)} material={aiBadge()} position={[0, 1.36, 0.212]} />
+        </>
+      )
     case 'hagrid':
       return (
         <>
@@ -213,16 +255,41 @@ function Extras({ who, P }) {
   }
 }
 
-export default function Professor({ who, position = [0, 0, 0], rotation = 0, phase = 0 }) {
+const angleTo = (from, to) => from + Math.atan2(Math.sin(to - from), Math.cos(to - from))
+
+export default function Professor({ who, position = [0, 0, 0], rotation = 0, phase = 0, talkId }) {
   const P = PROFESSORS[who]
   const s = P.height / 1.9
   const wide = who === 'hagrid' ? 1.3 : who === 'slughorn' ? 1.15 : 1
   const root = useRef()
   const wandArm = useRef()
   const glow = useMemo(() => m('#ffd6ea', { emissive: '#ff4fa3', emissiveIntensity: 2 }), [])
-  useFrame(({ clock }) => {
+  const skirt = useMemo(() => new THREE.CylinderGeometry(0.19, 0.55, 1.0, 32), [])
+
+  // clickable: the crosshair raycasts against TALKABLES and reads userData.talkId
+  useEffect(() => {
+    if (!talkId) return
+    const r = root.current
+    r.userData.talkId = talkId
+    TALKABLES.add(r)
+    return () => TALKABLES.delete(r)
+  }, [talkId])
+
+  useFrame(({ clock, camera }, dt) => {
     const t = clock.elapsedTime + phase
-    root.current.rotation.y = rotation + Math.sin(t * 0.4) * 0.35 // scanning the room
+    const r = root.current
+    if (talkId && TALKING.id === talkId) {
+      // face the visitor smoothly, bob a little as if talking, and stop waving
+      const target = Math.atan2(camera.position.x - r.position.x, camera.position.z - r.position.z)
+      r.rotation.y += (angleTo(r.rotation.y, target) - r.rotation.y) * Math.min(1, dt * 5)
+      r.position.y = position[1] + Math.abs(Math.sin(t * 9)) * 0.015
+      wandArm.current.rotation.x += (-0.5 - wandArm.current.rotation.x) * Math.min(1, dt * 6)
+      wandArm.current.rotation.z += (-0.15 - wandArm.current.rotation.z) * Math.min(1, dt * 6)
+      return
+    }
+    r.position.y = position[1]
+    const scan = rotation + Math.sin(t * 0.4) * 0.35 // scanning the room
+    r.rotation.y += (angleTo(r.rotation.y, scan) - r.rotation.y) * Math.min(1, dt * 3)
     const flick = Math.max(0, Math.sin(t * 1.3)) // raise the wand every few seconds
     wandArm.current.rotation.x = -0.3 - flick * 1.4
     wandArm.current.rotation.z = -0.25 - flick * 0.3
@@ -231,12 +298,31 @@ export default function Professor({ who, position = [0, 0, 0], rotation = 0, pha
   const hand = m(P.skin)
   return (
     <group ref={root} position={position} rotation={[0, rotation, 0]} scale={s}>
-      {/* robe + torso */}
-      <mesh geometry={new THREE.CylinderGeometry(0.2 * wide, 0.36 * wide, 1.22, 28)} material={sleeve} position={[0, 0.61, 0]} />
-      <B g={CYL} c={P.trim} p={[0, 0.03, 0]} s={[0.365 * wide, 0.06, 0.365 * wide]} />
-      <B g={CYL} c={P.robe} p={[0, 1.36, 0]} s={[0.205 * wide, 0.3, 0.19 * wide]} />
-      <B c={P.robe} p={[0, 1.5, 0]} s={[0.27 * wide, 0.1, 0.18 * wide]} />
-      <B g={BOX} c={P.trim} p={[0, 1.3, 0.19 * wide]} s={[0.06, 0.38, 0.01]} />
+      {P.gown ? (
+        <>
+          {/* royal wedding gown: full skirt with gold-trimmed ruffle tiers, fitted bodice, puff sleeves */}
+          <mesh geometry={skirt} material={sleeve} position={[0, 0.5, 0]} />
+          {[0.04, 0.36, 0.68].map((y, i) => (
+            <B key={y} g={TORUS} c={i === 0 ? P.trim : '#ffd6ea'} p={[0, y, 0]} r={[Math.PI / 2, 0, 0]} s={[0.54 - i * 0.11, 0.54 - i * 0.11, 0.3]} />
+          ))}
+          <B g={CYL} c={P.trim} p={[0, 1.0, 0]} s={[0.2, 0.04, 0.17]} />
+          <B g={CYL} c={P.robe} p={[0, 1.27, 0]} s={[0.19, 0.5, 0.165]} />
+          <B c={P.robe} p={[0, 1.49, 0]} s={[0.22, 0.07, 0.16]} />
+          {[-1, 1].map((sx) => (
+            <B key={sx} c="#ffd6ea" p={[0.25 * sx, 1.46, 0]} s={[0.085, 0.08, 0.085]} />
+          ))}
+          <B g={TORUS} c={P.trim} o={{ metalness: 0.8, roughness: 0.25 }} p={[0, 1.53, 0.03]} r={[Math.PI / 2 - 0.2, 0, 0]} s={[0.075, 0.075, 0.06]} />
+        </>
+      ) : (
+        <>
+          {/* robe + torso */}
+          <mesh geometry={new THREE.CylinderGeometry(0.2 * wide, 0.36 * wide, 1.22, 28)} material={sleeve} position={[0, 0.61, 0]} />
+          <B g={CYL} c={P.trim} p={[0, 0.03, 0]} s={[0.365 * wide, 0.06, 0.365 * wide]} />
+          <B g={CYL} c={P.robe} p={[0, 1.36, 0]} s={[0.205 * wide, 0.3, 0.19 * wide]} />
+          <B c={P.robe} p={[0, 1.5, 0]} s={[0.27 * wide, 0.1, 0.18 * wide]} />
+          <B g={BOX} c={P.trim} p={[0, 1.3, 0.19 * wide]} s={[0.06, 0.38, 0.01]} />
+        </>
+      )}
       <B g={CYL} c={P.skin} p={[0, 1.57, 0]} s={[0.05, 0.08, 0.05]} />
       {/* left arm hangs; right arm holds the wand */}
       <group position={[0.26 * wide, 1.46, 0]} rotation={[0.1, 0, 0.18]}>
@@ -245,11 +331,20 @@ export default function Professor({ who, position = [0, 0, 0], rotation = 0, pha
         {who === 'trelawney' && (
           <B c="#bfe3ff" o={{ transparent: true, opacity: 0.7, emissive: '#7fb2ff', emissiveIntensity: 0.6, roughness: 0.05 }} p={[0, -0.55, 0.12]} s={[0.11, 0.11, 0.11]} />
         )}
+        {P.gown && (
+          // wedding bouquet: pink and white roses on green stems
+          <>
+            <B g={CONE} c="#3f7a45" p={[0, -0.6, 0.05]} r={[Math.PI, 0, 0]} s={[0.035, 0.14, 0.035]} />
+            {[[0, 0], [0.04, 0.02], [-0.04, 0.02], [0.02, -0.035], [-0.025, -0.03]].map(([dx, dz], i) => (
+              <B key={i} c={i % 2 ? '#ffffff' : '#ff4fa3'} p={[dx, -0.5, 0.05 + dz]} s={[0.035, 0.03, 0.035]} />
+            ))}
+          </>
+        )}
       </group>
       <group ref={wandArm} position={[-0.26 * wide, 1.46, 0]}>
         <mesh geometry={CAP} material={sleeve} position={[0, -0.24, 0]} scale={[0.065, 0.2, 0.065]} />
         <mesh geometry={SPH} material={hand} position={[0, -0.5, 0.02]} scale={[0.045, 0.055, 0.04]} />
-        {who !== 'hagrid' && (
+        {who !== 'hagrid' && !P.gown && (
           <>
             <B g={CYL} c="#3b2617" p={[0, -0.5, 0.18]} r={[Math.PI / 2, 0, 0]} s={[0.009, 0.32, 0.009]} />
             <mesh geometry={SPH} material={glow} position={[0, -0.5, 0.34]} scale={0.018} />

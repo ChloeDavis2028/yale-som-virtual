@@ -11,6 +11,7 @@ export const COURSES = {
   mgt538: { code: 'MGT 538', name: 'Mastering Influence & Persuasion', prof: 'Gilderoy Lockhart' },
   mgt800: { code: 'MGT 800', name: 'Crisis Management in Tech', prof: 'Alastor Moody' },
   mgt541: { code: 'MGT 541', name: 'Corporate Finance', prof: 'Filius Flitwick' },
+  mgt409z: { code: 'MGT 409', name: 'AI Foundations for Managers', prof: 'Tauhid Zaman' }, // classroom 2200, AI avatar
 }
 export const COURSE_KEYS = Object.keys(COURSES)
 export const SLIDE_KINDS = ['title', 'chart', 'content']
@@ -61,6 +62,11 @@ const DECKS = {
     title: ['Valuation by DCF', 'A dollar today beats a dollar tomorrow'],
     content: ['NPV and the cost of capital', ['NPV = Σ CFₜ / (1 + r)ᵗ − I₀', 'Take projects with NPV > 0', 'r = WACC, set by risk, not by hope', 'Terminal value often dominates — check it']],
     chart: 'dcf',
+  },
+  mgt409z: {
+    title: ['AI Agents with PydanticAI', 'Model + instructions + tools = an agent'],
+    content: ['Building an agent in PydanticAI', ['agent = Agent(model, instructions=...)', '@agent.tool gives it hands', 'result = agent.run_sync(prompt) → result.output', 'Typed outputs with Pydantic models']],
+    chart: 'agentloop',
   },
 }
 
@@ -117,6 +123,9 @@ const KID_DECKS = {
   },
 }
 
+// rooms without a kid deck (classroom 2200's AI-avatar lecture) always show their real deck
+const isKid = (course) => KIDS && course in KID_DECKS
+
 function drawFun(g, [emoji, caption]) {
   g.textAlign = 'center'
   g.font = '230px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'
@@ -139,7 +148,7 @@ function frame(g, course, title) {
   g.fillRect(0, Hh - 56, W, 56)
   g.fillStyle = '#5a6475'
   g.font = '24px Georgia, serif'
-  g.fillText(KIDS ? `Yale Explorers · ${KID_DECKS[course].cls}` : `Yale SOM · ${COURSES[course].code}`, 56, Hh - 20)
+  g.fillText(isKid(course) ? `Yale Explorers · ${KID_DECKS[course].cls}` : `Yale SOM · ${COURSES[course].code}`, 56, Hh - 20)
   g.fillStyle = PINK
   g.fillRect(W - 140, Hh - 40, 84, 24)
 }
@@ -260,6 +269,49 @@ function drawChart(g, which) {
       g.font = '30px Georgia, serif'
       g.fillText(lab, x - g.measureText(lab).width / 2, 470)
     })
+  } else if (which === 'agentloop') {
+    // User → Agent → Tool → back to Agent → answer (typed output)
+    const box = (x, y, w, label, fill, ink = '#ffffff') => {
+      g.fillStyle = fill
+      g.beginPath()
+      g.roundRect(x, y, w, 110, 22)
+      g.fill()
+      g.fillStyle = ink
+      g.font = 'bold 40px Georgia, serif'
+      g.fillText(label, x + w / 2 - g.measureText(label).width / 2, y + 68)
+    }
+    const arrow = (x1, y1, x2, y2, label) => {
+      g.strokeStyle = INK
+      g.fillStyle = INK
+      g.lineWidth = 5
+      g.beginPath()
+      g.moveTo(x1, y1)
+      g.lineTo(x2, y2)
+      g.stroke()
+      const a = Math.atan2(y2 - y1, x2 - x1)
+      g.beginPath()
+      g.moveTo(x2, y2)
+      g.lineTo(x2 - 22 * Math.cos(a - 0.4), y2 - 22 * Math.sin(a - 0.4))
+      g.lineTo(x2 - 22 * Math.cos(a + 0.4), y2 - 22 * Math.sin(a + 0.4))
+      g.fill()
+      if (label) {
+        g.font = 'italic 26px Georgia, serif'
+        g.fillText(label, (x1 + x2) / 2 - g.measureText(label).width / 2, Math.min(y1, y2) - 14)
+      }
+    }
+    box(80, 200, 220, 'User', '#8aa4c8', INK)
+    box(500, 200, 260, 'Agent', BLUE)
+    box(960, 200, 220, 'Tool', PINK)
+    arrow(300, 255, 495, 255, 'prompt')
+    arrow(760, 235, 955, 235, 'call')
+    arrow(955, 285, 765, 285, '')
+    g.font = 'italic 26px Georgia, serif'
+    g.fillText('result', 822, 330)
+    box(420, 470, 420, 'answer', '#e9edf3', INK)
+    arrow(630, 310, 630, 465, '')
+    g.font = 'italic 28px Georgia, serif'
+    g.fillStyle = INK
+    g.fillText('(typed output)', 630 - g.measureText('(typed output)').width / 2, 625)
   } else if (which === 'dcf') {
     axes()
     for (let i = 0; i < 6; i++) {
@@ -299,14 +351,15 @@ export function slideTex(course, kind) {
   c.width = W
   c.height = Hh
   const g = c.getContext('2d')
-  const deck = KIDS ? KID_DECKS[course] : DECKS[course]
+  const kid = isKid(course)
+  const deck = kid ? KID_DECKS[course] : DECKS[course]
   if (kind === 'title') {
     const info = COURSES[course]
     g.fillStyle = BLUE
     g.fillRect(0, 0, W, Hh)
     g.fillStyle = PINK
     g.font = 'bold 34px Georgia, serif'
-    g.fillText(KIDS ? deck.cls : `${info.code} · ${info.name}`, 80, 150)
+    g.fillText(kid ? deck.cls : `${info.code} · ${info.name}`, 80, 150)
     g.fillRect(80, 330, 140, 10)
     g.fillStyle = '#ffffff'
     g.font = 'bold 76px Georgia, serif'
@@ -315,7 +368,7 @@ export function slideTex(course, kind) {
     g.fillText(deck.title[1], 80, 410)
     g.font = 'italic 34px Georgia, serif'
     g.fillStyle = '#c9d6ea'
-    g.fillText(KIDS ? `Taught by Prof. ${info.prof}` : `Prof. ${info.prof} · Yale SOM · Fall 2026`, 80, 620)
+    g.fillText(kid ? `Taught by Prof. ${info.prof}` : `Prof. ${info.prof} · Yale SOM · Fall 2026`, 80, 620)
   } else if (kind === 'content') {
     frame(g, course, deck.content[0])
     g.fillStyle = INK
@@ -328,7 +381,7 @@ export function slideTex(course, kind) {
     })
   } else {
     frame(g, course, deck.title[0])
-    if (KIDS) drawFun(g, deck.fun)
+    if (kid) drawFun(g, deck.fun)
     else drawChart(g, deck.chart)
   }
   const t = new THREE.CanvasTexture(c)
